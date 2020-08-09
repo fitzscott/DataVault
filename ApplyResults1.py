@@ -23,6 +23,7 @@ FROM DVAZ1STG.SCH_LD2.grS s
     ON s.grhk = tgts.game_results_hash_key
     AND s.src = tgts.record_src
 WHERE s.grhd <> COALESCE(tgts.hash_diff, 'NoMatch')
+    AND tgts.load_end_dt IS NULL
     """,
     "grH": """
 INSERT INTO DVAZ1.sch_tgt2.game_results_h
@@ -198,6 +199,7 @@ FROM DVAZ1STG.SCH_LD2.avS s
     ON s.avhk = tgts.agent_value_hash_key
     AND s.src = tgts.record_src
 WHERE s.avhd <> COALESCE(tgts.hash_diff, 'NoMatch')
+    AND tgts.load_end_dt IS NULL
     """,
     "wssLav": """
 INSERT INTO DVAZ1.sch_tgt2.weighted_strategy_set_x_agent_value_l
@@ -224,16 +226,16 @@ UPDATE dvaz1.sch_tgt2.game_results_s
 SET load_end_dt = mxld.next_ld_dt
 FROM
 (
-SELECT DISTINCT
+SELECT
     gs1.game_results_hash_key,
     gs1.load_dt,
-    gs1.load_end_dt,
     MIN(gs2.load_dt) next_ld_dt
 FROM dvaz1.sch_tgt2.game_results_s gs1
     JOIN dvaz1.sch_tgt2.game_results_s gs2
     ON gs1.game_results_hash_key = gs2.game_results_hash_key
 WHERE gs1.load_dt < gs2.load_dt
-GROUP BY 1,2,3
+    AND gs1.load_end_dt IS NULL
+GROUP BY 1,2
 ) mxld
 WHERE dvaz1.sch_tgt2.game_results_s.game_results_hash_key = mxld.game_results_hash_key
     AND dvaz1.sch_tgt2.game_results_s.load_dt = mxld.load_dt
@@ -243,16 +245,16 @@ UPDATE dvaz1.sch_tgt2.agent_value_s
 SET load_end_dt = mxld.next_ld_dt
 FROM
 (
-SELECT DISTINCT
+SELECT
     av1.agent_value_hash_key,
     av1.load_dt,
-    av1.load_end_dt,
     MIN(av2.load_dt) next_ld_dt
 FROM dvaz1.sch_tgt2.agent_value_s av1
     JOIN dvaz1.sch_tgt2.agent_value_s av2
     ON av1.agent_value_hash_key = av2.agent_value_hash_key
 WHERE av1.load_dt < av2.load_dt
-GROUP BY 1,2,3
+    AND av1.load_end_dt IS NULL
+GROUP BY 1,2
 ) mxld
 WHERE dvaz1.sch_tgt2.agent_value_s.agent_value_hash_key = mxld.agent_value_hash_key
     AND dvaz1.sch_tgt2.agent_value_s.load_dt = mxld.load_dt
