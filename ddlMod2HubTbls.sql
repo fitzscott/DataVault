@@ -28,7 +28,8 @@ CREATE TABLE strategy_set_member_h
     strategy_set_member_hash_key CHAR(32)  NOT NULL,
     load_dt TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     record_src VARCHAR(40),
-    strategy_set_member_id VARCHAR(1023) NOT NULL,
+    strategy_id VARCHAR(50) NOT NULL,
+    strategy_set_id VARCHAR(1023) NOT NULL,
     PRIMARY KEY(strategy_set_member_hash_key)
 );
 
@@ -37,7 +38,8 @@ CREATE TABLE weighted_strategy_set_h
     weighted_strategy_set_hash_key CHAR(32)  NOT NULL,
     load_dt TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     record_src VARCHAR(40),
-    weighted_strategy_set_id VARCHAR(1023) NOT NULL,
+    strategy_set_id VARCHAR(1023) NOT NULL,
+    weight_num BIGINT NOT NULL,
     PRIMARY KEY(weighted_strategy_set_hash_key)
 );
 

@@ -4,10 +4,8 @@ from datetime import datetime
 import hashlib as hl
 import subprocess
 # import os
-import ApplyGameResults1 as agr
+import ApplyResults1 as ar
 
-# def getscore(ev):
-#     return (ev[1])
 
 class ExtractGameResults1():
     """
@@ -41,6 +39,14 @@ class ExtractGameResults1():
     @property
     def delim(self):
         return (self._delim)
+
+    @property
+    def src(self):
+        return (self._src)
+
+    @property
+    def epc(self):
+        return (self._epc)
 
     def startup(self):
         # Create the files needed to represent the vault style for the
@@ -123,13 +129,14 @@ class ExtractGameResults1():
             mult *= 10
         # print("weight summary = " + str(wgtsum))
         wsshk = self.mkhash([stratset, str(wgtsum)])
+        # Business keys strategy set + weight
         self.writerec("wssH", [src, wsshk, stratset, str(wgtsum)])
         # do not need a weighted strategy set satellite, either
         # write weighted strategy set <-> game results link
-        wssLgrhk = self.mkhash([gameid, posnum, stratset, str(wgtsum)])
+        wssLgrhk = self.mkhash([stratset, str(wgtsum), gameid, posnum])
         self.writerec("wssLgr", [src, wssLgrhk, wsshk, grhk])
         # write strategy set <-> weighted strategy set link
-        ssLwsshk = self.mkhash([stratset, str(wgtsum)])     # don't need ss 2x
+        ssLwsshk = self.mkhash([stratset, str(wgtsum)])     # need 2x?
         self.writerec("ssLwss", [src, ssLwsshk, sshk, wsshk])
         # write strategy set member & strategy
         for strat in strats:
@@ -139,16 +146,16 @@ class ExtractGameResults1():
             # The member ID is really the strategy + strategy set,
             # so a link would do. Except that the problem with the weighted
             # strategy set member comes up again.
-            # Kludge the ID
-            self.writerec("ssmH", [src, ssmhk, strat + "_" + stratset])
+            # The biz keys are strategy + strategy set
+            self.writerec("ssmH", [src, ssmhk, strat, stratset])
             # write strategy set <-> strategy set member link
-            ssLssmhk = self.mkhash([stratset, strat])   # no use having it 2x
+            ssLssmhk = self.mkhash([stratset, strat, stratset])
             self.writerec("ssLssm", [src, ssLssmhk, sshk, ssmhk])
             # write strategy hub - no satellite needed
             shk = self.mkhash([strat])
             self.writerec("sH", [src, shk, strat])
             # write strategy <-> strategy set member link
-            sLssmhk = self.mkhash([strat, stratset])    # no use having it 2x
+            sLssmhk = self.mkhash([strat, strat, stratset])
             self.writerec("sLssm", [src, sLssmhk, shk, ssmhk])
 
 
@@ -193,7 +200,7 @@ class ExtractGameResults1():
         # os.system(r"powershell .\mkuniq.ps1 " + self._epc)
 
         # now send the files to Snowflake & apply them against final tables.
-        apgmrs = agr.ApplyGameResults1()
+        apgmrs = ar.ApplyResults1()
         for stgtblnm in self.files.keys():
             apgmrs.processfile(self.filenames[stgtblnm], stgtblnm)
             subprocess.run(["powershell", "Remove-Item", ".\\" + self.filenames[stgtblnm]])

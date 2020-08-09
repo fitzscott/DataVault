@@ -1,5 +1,6 @@
 import snoflkcon
 
+
 # I would prefer to do this via metadata, since the tables are all structured
 # the same, but my staging tables have different column names (lazy - bad),
 # so it'd be a little trickier, anyway. Figure out the basics now & do the
@@ -18,9 +19,10 @@ SELECT DISTINCT
     s.srank,
     s.winloss
 FROM DVAZ1STG.SCH_LD2.grS s
-    LEFT OUTER JOIN dvaz1.sch_tgt2.game_results_s tgtgrs
-    ON s.grhk = tgtgrs.game_results_hash_key
-WHERE s.grhd <> COALESCE(tgtgrs.hash_diff, 'NoMatch')
+    LEFT OUTER JOIN dvaz1.sch_tgt2.game_results_s tgts
+    ON s.grhk = tgts.game_results_hash_key
+    AND s.src = tgts.record_src
+WHERE s.grhd <> COALESCE(tgts.hash_diff, 'NoMatch')
     """,
     "grH": """
 INSERT INTO DVAZ1.sch_tgt2.game_results_h
@@ -35,7 +37,9 @@ FROM DVAZ1STG.SCH_LD2.grH h
     /* join on biz keys, not hash keys */
     ON h.gameid = tgth.game_id
     AND h.posnum = tgth.player_pos_num
+    AND h.src = tgth.record_src
 WHERE tgth.game_id IS NULL
+    AND tgth.player_pos_num IS NULL
     """,
     "wssLgr": """
 INSERT INTO DVAZ1.sch_tgt2.weighted_strategy_set_x_game_results_l
@@ -49,7 +53,9 @@ FROM DVAZ1STG.SCH_LD2.wssLgr l
     LEFT OUTER JOIN DVAZ1.sch_tgt2.weighted_strategy_set_x_game_results_l tgtl
     ON l.wsshk = tgtl.weighted_strategy_set_hash_key
     AND l.grhk = tgtl.game_results_hash_key
+    AND l.src = tgtl.record_src
 WHERE tgtl.weighted_strategy_set_hash_key IS NULL
+    AND tgtl.game_results_hash_key IS NULL
     """,
     # I think this one is wrong. The wgtsum is not a unique index, is it?
     "wssH": """
@@ -58,11 +64,15 @@ SELECT
     h.wsshk,
     CURRENT_TIMESTAMP(),
     h.src,
+    h.stratset,
     h.wgtsum
 FROM DVAZ1STG.SCH_LD2.wssH h
     LEFT OUTER JOIN DVAZ1.sch_tgt2.weighted_strategy_set_h tgth
-    ON h.wgtsum = tgth.weighted_strategy_set_id
-WHERE tgth.weighted_strategy_set_id IS NULL
+    ON h.stratset = tgth.strategy_set_id
+    AND h.wgtsum = tgth.weight_num
+    AND h.src = tgth.record_src
+WHERE tgth.strategy_set_id IS NULL
+    AND tgth.weight_num IS NULL
     """,
     "ssLwss": """
 INSERT INTO DVAZ1.sch_tgt2.strategy_set_x_weighted_strategy_set_l
@@ -76,7 +86,9 @@ FROM DVAZ1STG.SCH_LD2.ssLwss l
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_set_x_weighted_strategy_set_l tgtl
     ON l.sshk = tgtl.strategy_set_hash_key
     AND l.wsshk = tgtl.weighted_strategy_set_hash_key
-WHERE tgtl.weighted_strategy_set_hash_key IS NULL
+    AND l.src = tgtl.record_src
+WHERE tgtl.strategy_set_hash_key IS NULL
+    AND tgtl.weighted_strategy_set_hash_key IS NULL
     """,
     # This won't work, either, but for a different reason:  The data type on
     # the strategy set ID is numeric.
@@ -90,6 +102,7 @@ SELECT
 FROM DVAZ1STG.SCH_LD2.ssH h
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_set_h tgth
     ON h.stratset = tgth.strategy_set_id
+    AND h.src = tgth.record_src
 WHERE tgth.strategy_set_id IS NULL
     """,
     "ssLssm": """
@@ -104,20 +117,25 @@ FROM DVAZ1STG.SCH_LD2.ssLssm l
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_set_x_strategy_set_member_l tgtl
     ON l.sshk = tgtl.strategy_set_hash_key
     AND l.ssmhk = tgtl.strategy_set_member_hash_key
+    AND l.src = tgtl.record_src
 WHERE tgtl.strategy_set_hash_key IS NULL
+    AND tgtl.strategy_set_member_hash_key IS NULL
     """,
-    # and again, won't work as-is
     "ssmH": """
 INSERT INTO DVAZ1.sch_tgt2.strategy_set_member_h
 SELECT
     h.ssmhk,
     CURRENT_TIMESTAMP(),
     h.src,
-    h.strat_stratset
+    h.strat,
+    h.stratset
 FROM DVAZ1STG.SCH_LD2.ssmH h
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_set_member_h tgth
-    ON h.strat_stratset = tgth.strategy_set_member_id
-WHERE tgth.strategy_set_member_id IS NULL
+    ON h.strat = tgth.strategy_set_id
+    AND h.stratset = tgth.strategy_id
+    AND h.src = tgth.record_src
+WHERE tgth.strategy_set_id IS NULL
+    AND tgth.strategy_id IS NULL
     """,
     "sH": """
 INSERT INTO DVAZ1.sch_tgt2.strategy_h
@@ -129,6 +147,7 @@ SELECT
 FROM DVAZ1STG.SCH_LD2.sH h
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_h tgth
     ON h.strat = tgth.strategy_id
+    AND h.src = tgth.record_src
 WHERE tgth.strategy_id IS NULL
     """,
     "sLssm": """
@@ -143,7 +162,58 @@ FROM DVAZ1STG.SCH_LD2.sLssm l
     LEFT OUTER JOIN DVAZ1.sch_tgt2.strategy_x_strategy_set_member_l tgtl
     ON l.shk = tgtl.strategy_hash_key
     AND l.ssmhk = tgtl.strategy_set_member_hash_key
+    AND l.src = tgtl.record_src
 WHERE tgtl.strategy_hash_key IS NULL
+    AND tgtl.strategy_set_member_hash_key IS NULL
+    """,
+    "avH": """
+INSERT INTO DVAZ1.sch_tgt2.agent_value_h
+SELECT
+    h.avhk,
+    CURRENT_TIMESTAMP(),
+    h.src,
+    h.stratset,
+    h.wgtnum
+FROM DVAZ1STG.SCH_LD2.avH h
+    LEFT OUTER JOIN DVAZ1.sch_tgt2.agent_value_h tgth
+    ON h.stratset = tgth.strategy_set_id 
+    AND h.wgtnum = tgth.weight_num
+    AND h.src = tgth.record_src
+WHERE tgth.strategy_set_id IS NULL
+    AND tgth.weight_num IS NULL
+    """,
+    "avS": """
+INSERT INTO dvaz1.sch_tgt2.agent_value_s
+SELECT DISTINCT
+    s.avhk,
+    CURRENT_TIMESTAMP(),
+    NULL,
+    s.src,
+    s.avhd,
+    s.winrt,
+    s.execcnt,
+    s.updepc
+FROM DVAZ1STG.SCH_LD2.avS s
+    LEFT OUTER JOIN dvaz1.sch_tgt2.agent_value_s tgts
+    ON s.avhk = tgts.agent_value_hash_key
+    AND s.src = tgts.record_src
+WHERE s.avhd <> COALESCE(tgts.hash_diff, 'NoMatch')
+    """,
+    "wssLav": """
+INSERT INTO DVAZ1.sch_tgt2.weighted_strategy_set_x_agent_value_l
+SELECT
+    l.wssLavhk,
+    CURRENT_TIMESTAMP(),
+    l.src,
+    l.wsshk,
+    l.avhk
+FROM DVAZ1STG.SCH_LD2.wssLav l
+    LEFT OUTER JOIN DVAZ1.sch_tgt2.weighted_strategy_set_x_agent_value_l tgtl
+    ON l.wsshk = tgtl.weighted_strategy_set_hash_key
+    AND l.avhk = tgtl.agent_value_hash_key
+    AND l.src = tgtl.record_src
+WHERE tgtl.weighted_strategy_set_hash_key IS NULL
+    AND tgtl.agent_value_hash_key IS NULL
     """
 }
 
@@ -158,20 +228,57 @@ SELECT DISTINCT
     gs1.game_results_hash_key,
     gs1.load_dt,
     gs1.load_end_dt,
-    gs1.win_flg,
     MIN(gs2.load_dt) next_ld_dt
 FROM dvaz1.sch_tgt2.game_results_s gs1
     JOIN dvaz1.sch_tgt2.game_results_s gs2
     ON gs1.game_results_hash_key = gs2.game_results_hash_key
 WHERE gs1.load_dt < gs2.load_dt
-GROUP BY 1,2,3,4
+GROUP BY 1,2,3
 ) mxld
 WHERE dvaz1.sch_tgt2.game_results_s.game_results_hash_key = mxld.game_results_hash_key
     AND dvaz1.sch_tgt2.game_results_s.load_dt = mxld.load_dt
+    """,
+    "avS": """
+UPDATE dvaz1.sch_tgt2.agent_value_s
+SET load_end_dt = mxld.next_ld_dt
+FROM
+(
+SELECT DISTINCT
+    av1.agent_value_hash_key,
+    av1.load_dt,
+    av1.load_end_dt,
+    MIN(av2.load_dt) next_ld_dt
+FROM dvaz1.sch_tgt2.agent_value_s av1
+    JOIN dvaz1.sch_tgt2.agent_value_s av2
+    ON av1.agent_value_hash_key = av2.agent_value_hash_key
+WHERE av1.load_dt < av2.load_dt
+GROUP BY 1,2,3
+) mxld
+WHERE dvaz1.sch_tgt2.agent_value_s.agent_value_hash_key = mxld.agent_value_hash_key
+    AND dvaz1.sch_tgt2.agent_value_s.load_dt = mxld.load_dt
     """
 }
 
-class ApplyGameResults1():
+diagsql = {
+    "wssH": """
+INSERT INTO DVAZ1STG.DIAG2.wssH_diag
+SELECT
+    h.wsshk,
+    CURRENT_TIMESTAMP(),
+    h.src,
+    h.stratset,
+    h.wgtsum
+FROM DVAZ1STG.SCH_LD2.wssH h
+    LEFT OUTER JOIN DVAZ1.sch_tgt2.weighted_strategy_set_h tgth
+    ON h.stratset = tgth.strategy_set_id
+    AND h.wgtsum = tgth.weight_num
+    AND h.src = tgth.record_src
+WHERE (tgth.strategy_set_id IS NOT NULL
+    OR tgth.weight_num IS NULL)
+    """
+}
+
+class ApplyResults1():
     """
     Take staged files & apply them to Snowflake staging tables.
     Then apply changes in staging tables to final targets.
@@ -185,7 +292,9 @@ class ApplyGameResults1():
                              "strategy_set_x_strategy_set_member_l",
                          "ssmH": "strategy_set_member_h",
                          "sLssm": "strategy_x_strategy_set_member_l",
-                         "sH": "strategy_h"}
+                         "sH": "strategy_h", "avH": "agent_value_h",
+                         "avS": "agent_value_s",
+                         "wssLav": "weighted_strategy_set_x_agent_value_l"}
         self._schema = "SCH_LD2"
         self._cnct = snoflkcon.get_connection()
         self._curs = self._cnct.cursor()
@@ -213,4 +322,7 @@ class ApplyGameResults1():
         if stgtbl in updsql.keys():
             print(updsql[stgtbl])
             self._curs.execute(updsql[stgtbl])
+        if stgtbl in diagsql.keys():
+            print(diagsql[stgtbl])
+            self._curs.execute(diagsql[stgtbl])
         self._cnct.commit()     # necessary?
