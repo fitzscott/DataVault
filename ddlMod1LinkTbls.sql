@@ -100,12 +100,12 @@ CREATE TABLE weighted_strategy_set_x_game_results_l
     PRIMARY KEY(weighted_strategy_set_x_game_results_hash_key)
 );
 
-CREATE TABLE game_results_x_game_stats_l
+CREATE TABLE game_stats_x_game_results_l
 (
-    game_results_x_game_stats_hash_key CHAR(32) NOT NULL,
+    game_stats_x_game_results_hash_key CHAR(32) NOT NULL,
     load_dt TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     record_src VARCHAR(40),
-    game_results_hash_key CHAR(32),
     game_stats_hash_key CHAR(32),
-    PRIMARY KEY(game_results_x_game_stats_hash_key)
+    game_results_hash_key CHAR(32),
+    PRIMARY KEY(game_stats_x_game_results_hash_key)
 );

@@ -1,5 +1,4 @@
 import DepTbl as dt
-import hashlib as hl
 
 
 class HubTbl(dt.DepTbl):

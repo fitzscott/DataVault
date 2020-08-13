@@ -1,5 +1,3 @@
-import snowflake.connector
-import dbcfg
 import snoflkcon
 import os
 import sys
@@ -19,6 +17,10 @@ class LoadSnowflakeTbl():
     def disconnect(self):
         if self._cnct is not None:
             self._cnct.close()
+
+    @property
+    def connection(self):
+        return (self._cnct)
 
     def loadfromfile(self, flnm):
         basetblnm = "_".join(os.path.basename(flnm).split("_")[0:-1])
@@ -51,7 +53,7 @@ if __name__ == "__main__":
     # lsft.loadfromfile(r"E:\data\Snowflake\strategy_H_1595856919.txt")
     # lsft.loadfromfile(r"E:\data\Snowflake\strategy_S_1595856919.txt")
     # lsft.loadfromfile(r"E:\data\Snowflake\strategy_set_member_H_1595800776.txt")
-    # lsft.loadfromfile(r"E:\data\Snowflake\strategy_set_member_weighted_strategy_set_member_L_1595802139.txt")
+   # lsft.loadfromfile(r"E:\data\Snowflake\strategy_set_member_weighted_strategy_set_member_L_1595802139.txt")
     lsft.loadfromfile(sys.argv[1])
     lsft.disconnect()
 

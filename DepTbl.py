@@ -1,9 +1,8 @@
-import sys
-import os
 import time
 from datetime import datetime
 import hashlib as hl
 import dbcfg
+import subprocess
 
 class DepTbl():
     """
@@ -62,7 +61,11 @@ class DepTbl():
         self._flnm = "_".join([self._tblnm, self._ext, self._epc]) + ".txt"
         return (self._savdir + self._flnm)
 
+    def tablename(self):
+        return ("_".join([self._tblnm, self._ext.lower()]))
+
     def startup(self):
+        # print("Opening file " + self.filename())
         self._fl = open(self.filename(), "w")
 
     def clearepoch(self):
@@ -70,6 +73,10 @@ class DepTbl():
 
     def shutdown(self):
         self._fl.close()
+        # self.clearepoch()
+
+    def deletefile(self):
+        subprocess.run(["powershell", "Remove-Item", self.filename()])
         self.clearepoch()
 
     def __str__(self):

@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-import hashlib as hl
 import DepTbl as dt
 
 
@@ -72,3 +71,5 @@ class LinkTbl(dt.DepTbl):
         self._flnm = "_".join([self.name, self.parenttable, self.ext, self._lepc]) + ".txt"
         return (self.outputdir + self._flnm)
 
+    def tablename(self):
+        return ("_".join([self.name, "x", self.parenttable, self.ext]))

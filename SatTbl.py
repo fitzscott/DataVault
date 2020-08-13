@@ -40,7 +40,7 @@ class SatTbl(dt.DepTbl):
                 # testprn.append(val)
                 val2hash4dif[kidx] = val
                 outvalz[kidx + 3] = val
-        # print("^".join(testprn))
+        # print("^".join(testprn))p
         dif2h = self.delimiter.join([str(val2hash4dif[idx])
                                      for idx in sorted(val2hash4dif.keys())])
         # print("to hash: " + str(dif2h))
