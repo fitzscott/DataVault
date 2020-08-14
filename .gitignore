@@ -3,3 +3,4 @@ dbcfg.py
 .idea/
 __pycache__/
 venv/
+etl*.ps1

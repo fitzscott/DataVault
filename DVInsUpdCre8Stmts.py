@@ -1112,7 +1112,7 @@ cr8stmts = {
         record_src VARCHAR(40),
         agent_value_hash_key CHAR(32) NOT NULL,
         hash_diff CHAR(32),
-        win_rate VARCHAR(20) NULL,
+        win_rate VARCHAR(32) NULL,
         exec_cnt VARCHAR(12) NULL,
         update_epoch VARCHAR(24) NULL,
         PRIMARY KEY(agent_value_hash_key)
