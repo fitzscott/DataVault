@@ -177,7 +177,7 @@ def processall(src):
 
     emst = ExtractMySQLTbl("weighted_strategy_set")
     emst.addhub("WeightedStrategySetID", src)
-    emst.addlink("strategy_set", src, ["WeightedStrategySetID","StrategySetID"])
+    emst.addlink("strategy_set", src, ["StrategySetID", "WeightedStrategySetID"])
     emst.addsat(src, "WeightedStrategySetID", "WeightSummaryNum")
     emst.openconnections()
     partsel = "SELECT DISTINCT StrategySetID FROM weighted_strategy_set"
@@ -207,9 +207,9 @@ def processall(src):
     emst.addhub("GameId,PlayerPosNum", src)  # Mmmm... should be ID, not Id
     emst.addsat(src, "GameId,PlayerPosNum", "ScoreCnt,RankNum,WinFlg")
     emst.addlink("weighted_strategy_set", src,
-                 ["GameId,PlayerPosNum", "WeightedStrategySetID"])
+                 ["WeightedStrategySetID", "GameId,PlayerPosNum"])
     emst.addlink("game_stats", src,
-                 ["GameId,PlayerPosNum", "GameId"])
+                 ["GameId", "GameId,PlayerPosNum"])
     emst.openconnections()
     emst.pulldata()
     emst.closeconnections()

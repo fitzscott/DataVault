@@ -258,6 +258,7 @@ CREATE TABLE dvaz1stg.sch_ld1.competition_grp_s
     record_src VARCHAR(40),
     competition_grp_hash_key CHAR(32) NOT NULL,
     hash_diff CHAR(32),
+    comp_grp_descr VARCHAR(1023),
     set_num VARCHAR(10),
     PRIMARY KEY(competition_grp_hash_key)
 );
