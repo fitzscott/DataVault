@@ -254,10 +254,45 @@ def processall(src):
     emst.pulldata()
     emst.closeconnections()
 
+def processfacts(src):
+    emst = ExtractMySQLTbl("game_stats")
+    emst.addhub("GameId", src)  # Mmmm... should be ID, not Id
+    emst.addsat(src, "GameId", "RunTimeSecs,UpdateTs,FinishFlg")
+    emst.openconnections()
+    emst.pulldata()
+    emst.closeconnections()
+
+    emst = ExtractMySQLTbl("game_results")
+    emst.addhub("GameId,PlayerPosNum", src)  # Mmmm... should be ID, not Id
+    emst.addsat(src, "GameId,PlayerPosNum", "ScoreCnt,RankNum,WinFlg")
+    emst.addlink("weighted_strategy_set", src,
+                 ["WeightedStrategySetID", "GameId,PlayerPosNum"])
+    emst.addlink("game_stats", src,
+                 ["GameId", "GameId,PlayerPosNum"])
+    emst.openconnections()
+    emst.pulldata()
+    emst.closeconnections()
+
+    emst = ExtractMySQLTbl("agent_value")
+    emst.addhub("WeightedStrategySetID", src)
+    emst.addsat(src, "WeightedStrategySetID", "WinRate,ExecCnt,UpdateEpoch")
+    emst.addlink("weighted_strategy_set", src,
+                 ["WeightedStrategySetID","WeightedStrategySetID"])
+    emst.openconnections()
+    emst.pulldata()
+    emst.closeconnections()
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         src = sys.argv[1]
     else:
         src = "Win10.laptop.lrg1"
-    processall(src)
+    if len(sys.argv) > 2:
+        procall = sys.argv[2] == "Y"
+    else:
+        procall = False
+    if procall:
+        processall(src)
+    else:
+        processfacts(src)
